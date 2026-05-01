@@ -6,8 +6,7 @@
     let rTimer = null, aTimer = null, rDelay = 3000, aMin = 10, statusTimer = null;
     let isTyping = false;
     let textCards = [], emojiCards = [], imageCards = [], statusCards = [], groups = [{ id: 'default', name: '未分组', color: '#90943f' }], chatStickers = [];
-    const defaultTexts = [];
-    textCards = defaultTexts.map(t => ({ id: nid++, content: t, groupId: 'default' }));
+    textCards = [];
     let currentTab = 'text', currentGroupFilter = 'default';
     let groupBarCollapsed = false;
     const contactStatusEl = Q('contactStatus');
@@ -29,6 +28,9 @@
     const writeLetterBtn = Q('writeLetterBtn'), letterEditArea = Q('letterEditArea'), letterContent = Q('letterContent'), sendLetterBtn = Q('sendLetterBtn'), cancelLetterBtn = Q('cancelLetterBtn'), letterList = Q('letterList');
     let letters = [], mailboxTab = 'sent';
 
+    let rapidReplyActive = false;
+    let rapidReplyTimer = null;
+
     function showTyping() { if (!isTyping) { previousStatusText = contactStatusEl.textContent; isTyping = true; } contactStatusEl.textContent = '对方正在输入...'; }
     function hideTyping() { contactStatusEl.textContent = previousStatusText; isTyping = false; }
     function updateNightUI() { nightModeToggle.textContent = isNight ? '☀️' : '🌙' }
@@ -41,6 +43,8 @@
         localStorage.setItem('chatStickers', JSON.stringify(chatStickers));
         localStorage.setItem('letters', JSON.stringify(letters));
     }
+    window.addEventListener('beforeunload', saveAllData);
+
     function loadAllData() {
         try {
             const chatSettings = JSON.parse(localStorage.getItem('chatSettings'));
@@ -92,25 +96,34 @@
     }
     function stopTimers() { if (rTimer) clearTimeout(rTimer); if (aTimer) clearInterval(aTimer); rTimer = aTimer = null }
     function startAuto() { if (aTimer) clearInterval(aTimer); aTimer = setInterval(() => { if (!at.checked) return; sendRapidReplies(); }, aMin * 60000); }
+
     function sendRapidReplies() {
-        if (rapidReplyActive) return;
+        if (rapidReplyActive) {
+            clearTimeout(rapidReplyTimer);
+            rapidReplyActive = false;
+        }
         rapidReplyActive = true;
         const total = Math.floor(Math.random()*3)+1;
         let count = 0;
         function sendNext() {
             if (count >= total || !rapidReplyActive) { rapidReplyActive = false; return; }
             showTyping();
-            const t = getRandomReply();
-            hideTyping();
-            if (t) { msgs.push({ id:nid++, senderId:CT, text:t, timestamp:Date.now(), status:'read' }); render(); saveAllData(); }
-            count++;
-            if (count < total) { const delay = Math.floor(Math.random()*4000)+1000; setTimeout(sendNext, delay); }
-            else { rapidReplyActive = false; }
+            rapidReplyTimer = setTimeout(() => {
+                hideTyping();
+                const t = getRandomReply();
+                if (t) { msgs.push({ id:nid++, senderId:CT, text:t, timestamp:Date.now(), status:'read' }); render(); saveAllData(); }
+                count++;
+                if (count < total) { sendNext(); }
+                else { rapidReplyActive = false; }
+            }, rDelay);
         }
         sendNext();
     }
-    let rapidReplyActive = false;
-    function handleRapidReply(e) { e.preventDefault(); sendRapidReplies(); }
+
+    function handleRapidReply(e) {
+        e.preventDefault();
+        sendRapidReplies();
+    }
     rapidReplyBtn.addEventListener('click', handleRapidReply);
     rapidReplyBtn.addEventListener('touchend', handleRapidReply);
 
@@ -304,8 +317,9 @@
         let txt = isNight ? '#E8E0D8' : '';
         let nightExtra = isNight ? `.sg,.sm,.search-box,.import-area,.card-item,.history-msg,.mi,.si:hover,.ab:hover{background:${nightTheme.contactBubble}!important}.sp,.wp,.tp,.hp,.kp,.mp{background:${mainBg}!important}.ir input[type=text],textarea,.hex-input,.date-row input[type=date]{background:#3E3935!important;border-color:${accent}!important;color:${txt}!important}.group-tag{background:${btnBg}70!important;color:${txt}cc!important}.tab{background:${btnBg}90!important;color:${txt}cc!important}.circle-btn,.btn,.call-btn,.img-btn,.sticker-btn,.rapid-reply-btn,.letter-del-btn,.group-export-btn,.group-toggle-btn{color:${txt}!important}.bb,.group-edit-btn{color:${txt}cc!important}.mr.hl{background:rgba(200,190,180,.15)!important}input[type=range]::-webkit-slider-track,input[type=range]::-moz-range-track{background:#555!important}.si,.sg,.card-item,.card-item.img-card{border-color:${accent}!important}.date-row input[type=date]{background:${nightTheme.contactBubble}!important}` : '';
         let txtFull = `${txt?`.c,.cn,.st,.si,.pt,.sl,.ir label,.mb,.mi,.tab,.btn,.group-tag,.card-content,.ab,.new-group-btn,.circle-btn,.call-btn,.img-btn,.sticker-btn,.rapid-reply-btn,.bb,.qbt,.message-time,.setting-label,.search-box,.color-row span,.history-msg .meta,.history-msg .preview,.bf,.tr label,.sr span,.font-slider span,.kp .sg div,.import-area div,.eh,.kp .sg div span,.sticker-panel .add-sticker-btn,.msg-system,.mailbox-tab,.group-export-btn,.group-toggle-btn{color:${txt}!important}.mi::placeholder,.search-box::placeholder,textarea::placeholder{color:${txt}99}.qp,.qt{color:${txt}cc!important}.eh{color:${txt}88!important}`:''}`;
+        let avatarExtra = `.av{background:${mainBg}!important}.call-avatar{background:${mainBg}!important}`;
         let callExtra = `.call-header{background:${headerBg}!important}.call-window{background:${mainBg}!important}.call-minimized-bar{background:${headerBg}!important}`;
-        style.textContent = `body{background:${bodyBg}!important}.c,.ma,.sp,.wp,.tp,.hp,.kp,.mp{background:${mainBg}!important}.h{background:${headerBg}!important}.ia{background:${inputBg}!important}.btn,.circle-btn,.au,.new-group-btn,.snd,.call-btn,.img-btn,.sticker-btn,.rapid-reply-btn,.ap,#applyThemeBtn,.group-export-btn,.group-toggle-btn{background:${btnBg}!important}.btn:hover,.circle-btn:hover,.au:hover,.new-group-btn:hover,.snd:hover,.call-btn:hover,.img-btn:hover,.sticker-btn:hover,.rapid-reply-btn:hover,.ap:hover,#applyThemeBtn:hover,.group-export-btn:hover,.group-toggle-btn:hover{filter:brightness(0.85)!important}.tab,.mailbox-tab{background:${btnBg}90}.tab.active,.mailbox-tab.active{background:${accent}!important}.group-tag{background:${btnBg}70}.mb{background:${contactBubble}!important}.r .mb{background:${myBubble}!important}.msg-avatar,.av{background:${accent}!important}.right .av{background:${accent}cc}input[type="range"]::-webkit-slider-thumb{background:${accent}!important}input[type="range"]::-moz-range-thumb{background:${accent}!important}.tr input[type="checkbox"]{accent-color:${accent}}${txtFull}${nightExtra}${callExtra}.c .cn,.c .st,.c .si,.c .pt,.c .sl,.c .ir label,.c .mb,.c .mi,.c .tab,.c .btn,.c .group-tag,.c .card-content,.c .ab,.c .new-group-btn,.c .circle-btn,.c .call-btn,.c .img-btn,.c .sticker-btn,.c .rapid-reply-btn,.c .bb,.c .qbt,.c .message-time,.c .setting-label,.c .search-box,.c .mailbox-tab,.c .group-export-btn,.c .group-toggle-btn{font-size:${fontSize}px!important}.snd{font-size:${fontSize*1.5}px!important}`
+        style.textContent = `body{background:${bodyBg}!important}.c,.ma,.sp,.wp,.tp,.hp,.kp,.mp{background:${mainBg}!important}.h{background:${headerBg}!important}.ia{background:${inputBg}!important}.btn,.circle-btn,.au,.new-group-btn,.snd,.call-btn,.img-btn,.sticker-btn,.rapid-reply-btn,.ap,#applyThemeBtn,.group-export-btn,.group-toggle-btn{background:${btnBg}!important}.btn:hover,.circle-btn:hover,.au:hover,.new-group-btn:hover,.snd:hover,.call-btn:hover,.img-btn:hover,.sticker-btn:hover,.rapid-reply-btn:hover,.ap:hover,#applyThemeBtn:hover,.group-export-btn:hover,.group-toggle-btn:hover{filter:brightness(0.85)!important}.tab,.mailbox-tab{background:${btnBg}90}.tab.active,.mailbox-tab.active{background:${accent}!important}.group-tag{background:${btnBg}70}.mb{background:${contactBubble}!important}.r .mb{background:${myBubble}!important}${txtFull}${nightExtra}${avatarExtra}${callExtra}.c .cn,.c .st,.c .si,.c .pt,.c .sl,.c .ir label,.c .mb,.c .mi,.c .tab,.c .btn,.c .group-tag,.c .card-content,.c .ab,.c .new-group-btn,.c .circle-btn,.c .call-btn,.c .img-btn,.c .sticker-btn,.c .rapid-reply-btn,.c .bb,.c .qbt,.c .message-time,.c .setting-label,.c .search-box,.c .mailbox-tab,.c .group-export-btn,.c .group-toggle-btn{font-size:${fontSize}px!important}.snd{font-size:${fontSize*1.5}px!important}`
     }
     fontSizeSlider.oninput = () => { fontSizeValue.textContent = fontSizeSlider.value + 'px' };
     applyThemeBtn.onclick = () => { if (isNight) { isNight = false; localStorage.setItem('nightMode', 'false'); updateNightUI(); } applyTheme(); tp.classList.remove('show') };
@@ -452,14 +466,13 @@
             return `<div class="group-tag ${isActive?'active':''}" data-group-id="${g.id}" style="border-color:${g.color}"><span class="group-color" style="background:${g.color}"></span>${g.name}<button class="group-edit-btn" data-edit-group="${g.id}">✎</button>${g.id!=='default'?`<button class="group-edit-btn" data-del-group="${g.id}">✕</button>`:''}</div>`;
         }).join('');
         h += `<button class="new-group-btn" id="newGroupBtn">+ 新建</button>`;
-        if (currentGroupFilter !== 'all') h += `<button class="btn" id="clearGroupFilter" style="margin-left:auto">全部</button><button class="group-export-btn" id="exportGroupBtn">📤 导出"${groups.find(g=>g.id===currentGroupFilter)?.name||'当前分组'}"</button>`;
+        if (currentGroupFilter !== 'all') h += `<button class="group-export-btn" id="exportGroupBtn">📤 导出"${groups.find(g=>g.id===currentGroupFilter)?.name||'当前分组'}"</button>`;
         h += `<button class="group-toggle-btn" id="collapseGroupBtn" style="margin-left:4px">▲ 收起</button>`;
         groupBar.innerHTML = h;
         document.querySelectorAll('.group-tag').forEach(el => { el.addEventListener('click', e => { if (!e.target.closest('button')) { currentGroupFilter = el.dataset.groupId; renderWB() } }) });
         document.querySelectorAll('[data-edit-group]').forEach(b => b.onclick = e => { e.stopPropagation(); let gid = b.dataset.editGroup, g = groups.find(g => g.id === gid); if (g) { let nn = prompt('分组名称', g.name); if (nn !== null) { let nc = prompt('颜色代码 (如 #A9BD70)', g.color); g.name = nn.trim()||g.name; g.color = nc||g.color; renderWB(); saveAllData(); } } });
         document.querySelectorAll('[data-del-group]').forEach(b => b.onclick = e => { e.stopPropagation(); let gid = b.dataset.delGroup; if (confirm('删除分组？卡片将移至默认分组')) { groups = groups.filter(g => g.id !== gid); textCards.forEach(c => { if (c.groupId === gid) c.groupId = 'default' }); if (currentGroupFilter === gid) currentGroupFilter = 'all'; renderWB(); saveAllData(); } });
         document.getElementById('newGroupBtn')?.addEventListener('click', () => { let name = prompt('分组名称','新分组'); if (name) { let color = prompt('颜色代码','#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0')); groups.push({ id: Date.now()+'-'+Math.random(), name, color: color||'#90943f' }); renderWB(); saveAllData(); } });
-        document.getElementById('clearGroupFilter')?.addEventListener('click', () => { currentGroupFilter = 'all'; renderWB() });
         document.getElementById('exportGroupBtn')?.addEventListener('click', () => { exportGroupJSON(currentGroupFilter); });
         document.getElementById('collapseGroupBtn')?.addEventListener('click', () => { groupBarCollapsed = true; renderWB(); });
     }
