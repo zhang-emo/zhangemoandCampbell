@@ -44,6 +44,7 @@
         localStorage.setItem('letters', JSON.stringify(letters));
     }
     window.addEventListener('beforeunload', saveAllData);
+    setInterval(saveAllData, 5000);
 
     function loadAllData() {
         try {
@@ -501,8 +502,24 @@
     function importText(text, type, groupId='default') { let lines = text.split('\n').map(l => l.trim()).filter(l => l), added = 0; lines.forEach(l => { if (addCard(l, type, groupId)) added++ }); if (added > 0) saveAllData(); alert(`导入了 ${added} 条`) }
     wbImportText.onclick = () => { if (currentTab === 'image') { imgUploadInput.click() } else { importArea.style.display = 'block'; importTextArea.value = ''; importTextArea.placeholder = currentTab==='text'?'每行一条主字卡':currentTab==='emoji'?'每行一条Emoji':currentTab==='status'?'每行一条状态':'每行一条' } };
     wbUploadImg.onclick = () => imgUploadInput.click();
-    confirmImport.onclick = () => { let gid = 'default'; if (currentTab === 'text') gid = currentGroupFilter!=='all'?currentGroupFilter:'default'; importText(importTextArea.value, currentTab, gid); importTextArea.value = ''; importArea.style.display = 'none' };
-    cancelImport.onclick = () => { importArea.style.display = 'none'; };
+
+    function handleImportConfirm(e) {
+        e.preventDefault();
+        let gid = 'default';
+        if (currentTab === 'text') gid = currentGroupFilter !== 'all' ? currentGroupFilter : 'default';
+        importText(importTextArea.value, currentTab, gid);
+        importTextArea.value = '';
+        importArea.style.display = 'none';
+    }
+    function handleImportCancel(e) {
+        e.preventDefault();
+        importArea.style.display = 'none';
+    }
+    confirmImport.addEventListener('click', handleImportConfirm);
+    confirmImport.addEventListener('touchend', handleImportConfirm);
+    cancelImport.addEventListener('click', handleImportCancel);
+    cancelImport.addEventListener('touchend', handleImportCancel);
+
     imgUploadInput.onchange = e => { let files = e.target.files; if (!files.length) return; Array.from(files).forEach(f => { let r = new FileReader(); r.onload = ev => addCard(ev.target.result, 'image'); r.readAsDataURL(f) }); renderWB(); imgUploadInput.value = '' };
     wbExport.onclick = () => {
         const choiceList = '0: 全部字卡\n' + groups.map((g, idx) => `${idx+1}: ${g.name}`).join('\n');
