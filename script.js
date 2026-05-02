@@ -538,4 +538,27 @@
     wbBack.onclick = () => wp.classList.remove('show');
     updateContactStatus();
     render(); updSlider(); applySet();
+
+    // ---------- 移动端自适应 ----------
+    function adjustLayout() {
+        const c = document.querySelector('.c');
+        if (!c) return;
+        const availableHeight = window.innerHeight - 32; // body padding 上下各16px
+        c.style.height = Math.min(availableHeight, 640) + 'px';
+        if (availableHeight <= 672) {
+            c.style.transform = 'translateY(0)';
+        } else {
+            c.style.transform = 'translateY(-23px)';
+        }
+    }
+    window.addEventListener('resize', adjustLayout);
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', adjustLayout);
+    }
+    // 初始化时执行一次，并等待页面加载完成
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', adjustLayout);
+    } else {
+        adjustLayout();
+    }
 })();
