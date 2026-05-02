@@ -8,7 +8,6 @@ body { display:flex; align-items:center; justify-content:center; min-height:100v
     display:flex; flex-direction:column; overflow:hidden;
     border:1px solid #C4B9AC;
     position:relative;
-    transform:translateY(-23px);
 }
 .h { background:#9B8E82; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #C4B9AC; position:relative }
 .hi { display:flex; flex-direction:column; line-height:1.3 }
@@ -156,10 +155,9 @@ input[type=color] { width:38px; height:38px; border:none; cursor:pointer; backgr
 .group-toggle-btn { background:#C4B9AC; border:none; border-radius:20px; padding:5px 12px; font-size:13px; cursor:pointer; color:#1E2C0E; display:flex; align-items:center; gap:4px }
 .group-toggle-btn:hover { background:#887B6E; color:#F7F2EC }
 
-/* 窗口高度较小时，取消上移并限制高度 */
-@media (max-height: 672px) {
+/* 仅在屏幕高度足够大时向上移动23px，避免手机端显示不全 */
+@media (min-height: 700px) {
     .c {
-        transform: translateY(0);
-        height: calc(100vh - 32px);
+        transform: translateY(-23px);
     }
 }
