@@ -338,7 +338,7 @@
         if (inCall) return;
         inCall = true; callStartTime = Date.now(); callMinimized = false; incomingWaiting = false; isDialing = false;
         clearDialTimer();
-        callWindow.style.display = 'flex'; callWindow.style.width = '220px'; callWindow.style.height = 'auto'; callWindow.style.borderRadius = '24px';
+        callWindow.style.display = 'flex'; callWindow.style.width = clampSize(180, 220, 40); callWindow.style.height = 'auto'; callWindow.style.borderRadius = '24px';
         callHeader.style.display = 'flex'; callBody.style.display = 'flex'; cmiBar.style.display = 'none';
         resetCallBody();
         callAvatar.innerHTML = ctAv && ctAv.startsWith('data:image') ? `<img src="${ctAv}" style="width:100%;height:100%;object-fit:cover">` : ctAv;
@@ -369,7 +369,7 @@
     function incomingCall() {
         if (inCall || incomingWaiting || isDialing) return;
         incomingWaiting = true;
-        callWindow.style.display = 'flex'; callWindow.style.width = '220px'; callWindow.style.height = 'auto'; callWindow.style.borderRadius = '24px';
+        callWindow.style.display = 'flex'; callWindow.style.width = clampSize(180, 220, 40); callWindow.style.height = 'auto'; callWindow.style.borderRadius = '24px';
         callHeader.style.display = 'flex'; callBody.style.display = 'flex'; cmiBar.style.display = 'none';
         callTitle.textContent = '来电';
         callAvatar.innerHTML = ctAv && ctAv.startsWith('data:image') ? `<img src="${ctAv}" style="width:100%;height:100%;object-fit:cover">` : ctAv;
@@ -379,7 +379,7 @@
     function startDialing() {
         if (inCall || incomingWaiting || isDialing) return;
         isDialing = true;
-        callWindow.style.display = 'flex'; callWindow.style.width = '220px'; callWindow.style.height = 'auto'; callWindow.style.borderRadius = '24px';
+        callWindow.style.display = 'flex'; callWindow.style.width = clampSize(180, 220, 40); callWindow.style.height = 'auto'; callWindow.style.borderRadius = '24px';
         callHeader.style.display = 'flex'; callBody.style.display = 'flex'; cmiBar.style.display = 'none';
         callTitle.textContent = '正在呼叫...';
         callAvatar.innerHTML = ctAv && ctAv.startsWith('data:image') ? `<img src="${ctAv}" style="width:100%;height:100%;object-fit:cover">` : ctAv;
@@ -402,7 +402,7 @@
             callWindow.style.width = '160px'; callWindow.style.height = '40px'; callWindow.style.borderRadius = '20px';
             callHeader.style.display = 'none'; callBody.style.display = 'none'; cmiBar.style.display = 'flex'; callMinimized = true;
         } else {
-            callWindow.style.width = '220px'; callWindow.style.height = 'auto'; callWindow.style.borderRadius = '24px';
+            callWindow.style.width = clampSize(180, 220, 40); callWindow.style.height = 'auto'; callWindow.style.borderRadius = '24px';
             callHeader.style.display = 'flex'; callBody.style.display = 'flex'; cmiBar.style.display = 'none'; callMinimized = false;
         }
     };
@@ -539,23 +539,41 @@
     updateContactStatus();
     render(); updSlider(); applySet();
 
-    // ---------- 移动端自适应 ----------
+    // ---------- 自适应工具函数 ----------
+    function clampSize(min, preferred, vw) {
+        const vwValue = window.innerWidth * vw / 100;
+        return Math.max(min, Math.min(preferred, vwValue)) + 'px';
+    }
+
+    // ---------- 移动端自适应布局 ----------
+    let adjustLayoutTimer = null;
     function adjustLayout() {
         const c = document.querySelector('.c');
         if (!c) return;
-        const availableHeight = window.innerHeight - 32; // body padding 上下各16px
-        c.style.height = Math.min(availableHeight, 640) + 'px';
+        const bodyPadding = parseInt(getComputedStyle(document.body).paddingTop) * 2 || 32;
+        const availableHeight = window.innerHeight - bodyPadding;
+        const maxHeight = Math.min(availableHeight, 640);
+        c.style.height = maxHeight + 'px';
         if (availableHeight <= 672) {
             c.style.transform = 'translateY(0)';
         } else {
             c.style.transform = 'translateY(-23px)';
         }
     }
-    window.addEventListener('resize', adjustLayout);
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', adjustLayout);
+
+    function debounceAdjustLayout() {
+        if (adjustLayoutTimer) clearTimeout(adjustLayoutTimer);
+        adjustLayoutTimer = setTimeout(adjustLayout, 100);
     }
-    // 初始化时执行一次，并等待页面加载完成
+
+    window.addEventListener('resize', debounceAdjustLayout);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(adjustLayout, 300);
+    });
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', debounceAdjustLayout);
+    }
+    // 初始化
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', adjustLayout);
     } else {
