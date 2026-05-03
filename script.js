@@ -539,14 +539,13 @@
     updateContactStatus();
     render(); updSlider(); applySet();
 
-    // ---------- 移动端自适应（始终上移23px） ----------
+    // ---------- 移动端自适应（始终上移25px） ----------
     function adjustLayout() {
         const c = document.querySelector('.c');
         if (!c) return;
         const availableHeight = window.innerHeight - 32;
         c.style.height = Math.min(availableHeight, 640) + 'px';
-        // 始终向上偏移23像素
-        c.style.transform = 'translateY(-23px)';
+        c.style.transform = 'translateY(-25px)';
     }
     window.addEventListener('resize', adjustLayout);
     if (window.visualViewport) {
