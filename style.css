@@ -8,7 +8,7 @@ body { display:flex; align-items:center; justify-content:center; min-height:100v
     display:flex; flex-direction:column; overflow:hidden;
     border:1px solid #C4B9AC;
     position:relative;
-    transform:translateY(-23px);
+    transform:translateY(-25px);
 }
 .h { background:#9B8E82; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #C4B9AC; position:relative }
 .hi { display:flex; flex-direction:column; line-height:1.3 }
